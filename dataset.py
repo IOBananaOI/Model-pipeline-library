@@ -5,13 +5,17 @@ from typing import List
 from datetime import datetime
 
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from scipy import stats
+
 
 
 class Dataset:
     def __init__(self, data : pd.DataFrame, store_dataset_versions=False):
         self.curr_v = data # current version of dataset
+
+        self.cols= data.columns
         
         self._store_dataset_versions = store_dataset_versions
 
@@ -27,11 +31,29 @@ class Dataset:
         )
 
 
+    ##### General functions #####
+    
+    def get_numeric(self):
+        """
+        Returns all numeric columns.
+        """
+
+        return self.curr_v.select_dtypes(include='number').columns
+    
+
+    def get_categorial(self):
+        """
+        Returns all categorial columns.
+        """
+
+        return self.curr_v.select_dtypes(include='category').columns
+
+    
     ##### Version control system #####
 
     def get_versions_list(self):
         """
-        Return available versions if store_dataset_versions is True.
+        Returns available versions if store_dataset_versions is True.
         None otherwise.
         """
         assert self._store_dataset_versions, self._err_sdv_msg
@@ -122,5 +144,32 @@ class Dataset:
     ##### Visualizing #####
 
 
-    def hist(self, col: str):
-        plt.hist()
+    def hist(self, col: str, title=None, figsize=(7, 5), *args, **kwargs):
+        """
+        Plots matplotlib's histogramm with corresponding title and figsize.
+        """
+        plt.figure(figsize=figsize)
+        plt.title(title)
+        plt.hist(self.curr_v[col], *args, **kwargs)
+        plt.show()
+
+    
+    def plot_corr_matrix(self, cols=None, cols_to_exlude=None, *args, **kwargs):
+        """
+        Plots correlation matrix for all numerical columns if cols argument is None,
+        only for columns in cols list otherwise.
+
+        cols_to_exlude: columns from all numerical that do not need to be displayed
+        """
+        cols_to_show = self.get_numeric() if cols is None else cols
+
+        if cols_to_exlude is not None:
+            cols_to_show = cols_to_show.drop(cols_to_exlude)
+
+        corr = self.curr_v[cols_to_show].corr()
+        sns.heatmap(corr, *args, **kwargs)
+        plt.show()
+
+
+
+        
